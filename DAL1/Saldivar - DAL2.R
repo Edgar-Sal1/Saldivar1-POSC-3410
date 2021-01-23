@@ -155,3 +155,60 @@ rename(sample_df,count=value)
 flights_small<- select(flights,year:day,ends_with("delay"),distance, air_time,dest)
 # Create new column: avg_speed
 mutate(flights_small, speed = distance/air_time *60)
+
+# You can also use mutate to change existing variables
+# Change destination to factor
+mutate(flights_small, dest=factor(dest))
+
+# Create column 'gain' using formula 'dep_delay'-'arr_delay'
+mutate(flights_small, gain = dep_delay - arr_delay)
+# Create new column for arrival delay in hours
+mutate(flights_small, arr_delayhr = arr_delay/60)
+# Create new column for departure delay in hours
+mutate(flights_small, dep_delayhr = dep_delay/60)
+
+# Use summarise to calculate avg (mean) arrival delay
+summarise(flights,avgArrDelay = mean(arr_delay, na.rm=TRUE))
+# Use group_by and summarise to calculate avg arrival delay for all the carriers
+# Group flights by carrier: flights_carrier
+flights_carrier<- group_by(flights,carrier)
+# Summarise average delay
+summarise(flights_carrier, avgArrDelay = mean(arr_delay, na.rm = TRUE))
+# Summarise standard deviation of distance to destinations
+summarise(flights,sd(distance, na.rm = TRUE))
+
+# Create new data frame: not_cancelled
+not_cancelled<- filter(flights,!is.na(dep_delay)&!is.na(arr_delay))
+
+# Group by month, mean dep_delay
+not_cancelled_year<- group_by(not_cancelled, month)&mean(dep_delay)
+
+# Lesson 5: Piping Data ####
+library(nycflights13)
+data("flights")
+# Filter, assign new varName
+flights_extract<-filter(flights,month==11|month==12&arr_delay>60)
+# Group by destination
+flights_extract<-group_by(flights_extract,dest)
+# Count
+flights_extract<-count(flights_extract)
+# Rename
+flights_extract<- rename(flights_extract, number=n)
+# Arrange
+flights_extract<- arrange(flights_extract,desc(number))
+# Keep only top 6 rows
+flights_extract<-head(flights_extract, n=6)
+# Make ggplot bar graph
+ggplot(flights_extract, aes(x=reorder(dest,-number),y=number))+geom_bar(stat="identity")
+
+# Now look at the same operations with pipes
+flights%>%
+  filter(month==11|month==12&arr_delays>60) %>%
+  group_by(dest) %>%
+  count() %>%
+  rename(number=n) %>%
+  arrange(desc(number)) %>%
+  head(6) %>%
+  ggplot(aes(x=reorder(dest,-number),y=number))+geom_bar(stat="identity")
+
+  
